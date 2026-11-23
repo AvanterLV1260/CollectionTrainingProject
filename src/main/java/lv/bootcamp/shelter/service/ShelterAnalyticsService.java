@@ -16,13 +16,7 @@ public class ShelterAnalyticsService {
         Set<String> uniqueSpecies = new TreeSet<>();
         Map<String, List<Animal>> animalsBySpecies = new HashMap<>();
         List<String> animalsNeedingVetInput = new ArrayList<>();
-
-        // Fill all collections:
-        // - allAnimals (already available from import)
-        // - uniqueSpecies
-        // - animalsBySpecies
-        // - animalsNeedingVetInput with format name(species)
-
+        
         for (Animal animal : allAnimals) {
             uniqueSpecies.add(animal.getSpecies());
             if (animal.getAge() == null) {
