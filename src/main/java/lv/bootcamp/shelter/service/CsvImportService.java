@@ -5,8 +5,15 @@ import lv.bootcamp.shelter.model.Animal;
 import lv.bootcamp.shelter.service.data.ImportResult;
 
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 @Slf4j
 public class CsvImportService {
@@ -15,15 +22,64 @@ public class CsvImportService {
         log.info("Starting import from {}", inputPath);
 
         List<Animal> allAnimals = new ArrayList<>();
+        int skippedRows = 0;
 
-        // TODO Step 1:
-        // 1) Read intake.csv with UTF-8.
-        // 2) Skip header row.
-        // 3) Skip malformed rows and log warnings.
-        // 4) Allow blank age as unknown (null), but reject non-numeric age values.
-        // 5) Parse intakeDate using DateTimeFormatter.
-        // 6) Map each row to Animal object.
+        try (BufferedReader br = Files.newBufferedReader(inputPath, StandardCharsets.UTF_8)) {
+            br.readLine(); // skip header row
 
-        return new ImportResult(allAnimals, 0);
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",", -1);
+                if (parts.length < 5) {
+                    log.warn("Skipping malformed row: {}", line);
+                    skippedRows++;
+                    continue;
+                }
+                String name = parts[0].trim();
+                String species = parts[1].trim();
+                if (name.isEmpty() || species.isEmpty()) {
+                    log.warn("Skipping row with missing name or species: {}", line);
+                    skippedRows++;
+                    continue;
+                }
+                String vaccinatedText = parts[3].trim();
+                if (!vaccinatedText.equals("true") && !vaccinatedText.equals("false")) {
+                    log.warn("Skipping row with invalid vaccinated value: {}", line);
+                    skippedRows++;
+                    continue;
+                }
+                boolean vaccinated = Boolean.parseBoolean(vaccinatedText);
+                LocalDate intakeDate;
+                try {
+                    intakeDate = LocalDate.parse(parts[4].trim(), DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+                } catch (DateTimeParseException e) {
+                    log.warn("Skipping row with invalid date: {}", line);
+                    skippedRows++;
+                    continue;
+                }
+                Integer age = null;
+                String ageText = parts[2].trim();
+                if (!ageText.isEmpty()) {
+                    try {
+                        age = Integer.parseInt(ageText);
+                        if (age <= 0) {
+                            log.warn("Skipping row with non-positive age: {}", line);
+                            skippedRows++;
+                            continue;
+                        }
+                    } catch (NumberFormatException e) {
+                        log.warn("Skipping row with invalid age: {}", line);
+                        skippedRows++;
+                        continue;
+                    }
+                }
+                allAnimals.add(new Animal(name, species, age, vaccinated, intakeDate));
+            }
+        } catch (IOException e) {
+            log.error("Could not read file {}", inputPath, e);
+        }
+
+        log.info("Import finished: {} imported, {} skipped", allAnimals.size(), skippedRows);
+        return new ImportResult(allAnimals, skippedRows);
     }
 }
