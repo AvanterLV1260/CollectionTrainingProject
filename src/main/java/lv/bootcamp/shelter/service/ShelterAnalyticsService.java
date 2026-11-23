@@ -6,6 +6,7 @@ import lv.bootcamp.shelter.service.data.ImportResult;
 import lv.bootcamp.shelter.service.data.ShelterReportData;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ShelterAnalyticsService {
@@ -32,12 +33,25 @@ public class ShelterAnalyticsService {
             animalsBySpecies.get(animal.getSpecies()).add(animal);
         }
 
-        // TODO Step 3:
-        // Add necessary fields to ShelterReportData
-        // Use stream pipelines for:
-        // - vaccinated vs unvaccinated counts per species
-        // - oldest animal per species (excluding unknown ages)
+        Map<String, Long> totalPerSpecies = allAnimals.stream()
+                .collect(Collectors.groupingBy(Animal::getSpecies, Collectors.counting()));
 
-        return new ShelterReportData(importResult);
+        Map<String, Long> vaccinatedPerSpecies = allAnimals.stream()
+                .filter(Animal::isVaccinated)
+                .collect(Collectors.groupingBy(Animal::getSpecies, Collectors.counting()));
+
+        Map<String, Animal> oldestPerSpecies = new HashMap<>();
+        for (String species : animalsBySpecies.keySet()) {
+            animalsBySpecies.get(species).stream()
+                    .filter(animal -> animal.getAge() != null)
+                    .sorted(Comparator.comparing(Animal::getAge).reversed())
+                    .findFirst()
+                    .ifPresent(oldest -> oldestPerSpecies.put(species, oldest));
+        }
+
+        log.debug("Total per species: {}, vaccinated per species: {}", totalPerSpecies, vaccinatedPerSpecies);
+
+        return new ShelterReportData(importResult, uniqueSpecies, totalPerSpecies,
+                vaccinatedPerSpecies, oldestPerSpecies, animalsNeedingVetInput);
     }
 }
