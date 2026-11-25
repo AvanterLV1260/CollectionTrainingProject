@@ -15,14 +15,14 @@ public class ShelterAnalyticsService {
         List<Animal> allAnimals = importResult.allAnimals();
 
         Set<String> uniqueSpecies = new TreeSet<>();
-        Map<String, List<Animal>> animalsBySpecies = new HashMap<>();
+        Map<String, List<Animal>> animalsBySpecies = new TreeMap<>();
         List<String> animalsNeedingVetInput = new ArrayList<>();
 
         for (Animal animal : allAnimals) {
             log.debug("Processing animal {} ({})", animal.getName(), animal.getSpecies());
             uniqueSpecies.add(animal.getSpecies());
 
-            if (animal.getAge() == null) {
+            if (animal.getAgeOptional().isEmpty()) {
                 log.debug("{} has unknown age, adding to vet input list", animal.getName());
                 animalsNeedingVetInput.add(animal.getName() + "(" + animal.getSpecies() + ")");
             }
@@ -40,16 +40,14 @@ public class ShelterAnalyticsService {
                 .filter(Animal::isVaccinated)
                 .collect(Collectors.groupingBy(Animal::getSpecies, Collectors.counting()));
 
-        Map<String, Animal> oldestPerSpecies = new HashMap<>();
+        Map<String, Animal> oldestPerSpecies = new TreeMap<>();
         for (String species : animalsBySpecies.keySet()) {
             animalsBySpecies.get(species).stream()
-                    .filter(animal -> animal.getAge() != null)
+                    .filter(animal -> animal.getAgeOptional().isPresent())
                     .sorted(Comparator.comparing(Animal::getAge).reversed())
                     .findFirst()
                     .ifPresent(oldest -> oldestPerSpecies.put(species, oldest));
         }
-
-        log.debug("Total per species: {}, vaccinated per species: {}", totalPerSpecies, vaccinatedPerSpecies);
 
         return new ShelterReportData(importResult, uniqueSpecies, totalPerSpecies,
                 vaccinatedPerSpecies, oldestPerSpecies, animalsNeedingVetInput);

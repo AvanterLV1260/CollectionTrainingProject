@@ -23,16 +23,19 @@ public class CsvImportService {
 
         List<Animal> allAnimals = new ArrayList<>();
         int skippedRows = 0;
+        List<Integer> invalidRows = new ArrayList<>();
+        int rowNumber = 1;
 
         try (BufferedReader br = Files.newBufferedReader(inputPath, StandardCharsets.UTF_8)) {
-            br.readLine(); // skip header row
-
+            br.readLine();
             String line;
             while ((line = br.readLine()) != null) {
+                rowNumber++;
                 String[] parts = line.split(",", -1);
                 if (parts.length < 5) {
                     log.warn("Skipping malformed row: {}", line);
                     skippedRows++;
+                    invalidRows.add(rowNumber);
                     continue;
                 }
                 String name = parts[0].trim();
@@ -40,12 +43,14 @@ public class CsvImportService {
                 if (name.isEmpty() || species.isEmpty()) {
                     log.warn("Skipping row with missing name or species: {}", line);
                     skippedRows++;
+                    invalidRows.add(rowNumber);
                     continue;
                 }
                 String vaccinatedText = parts[3].trim();
                 if (!vaccinatedText.equals("true") && !vaccinatedText.equals("false")) {
                     log.warn("Skipping row with invalid vaccinated value: {}", line);
                     skippedRows++;
+                    invalidRows.add(rowNumber);
                     continue;
                 }
                 boolean vaccinated = Boolean.parseBoolean(vaccinatedText);
@@ -55,6 +60,7 @@ public class CsvImportService {
                 } catch (DateTimeParseException e) {
                     log.warn("Skipping row with invalid date: {}", line);
                     skippedRows++;
+                    invalidRows.add(rowNumber);
                     continue;
                 }
                 Integer age = null;
@@ -65,11 +71,13 @@ public class CsvImportService {
                         if (age <= 0) {
                             log.warn("Skipping row with non-positive age: {}", line);
                             skippedRows++;
+                            invalidRows.add(rowNumber);
                             continue;
                         }
                     } catch (NumberFormatException e) {
                         log.warn("Skipping row with invalid age: {}", line);
                         skippedRows++;
+                        invalidRows.add(rowNumber);
                         continue;
                     }
                 }
@@ -80,6 +88,6 @@ public class CsvImportService {
         }
 
         log.info("Import finished: {} imported, {} skipped", allAnimals.size(), skippedRows);
-        return new ImportResult(allAnimals, skippedRows);
+        return new ImportResult(allAnimals, skippedRows, invalidRows);
     }
 }

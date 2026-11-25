@@ -1,7 +1,9 @@
 package lv.bootcamp.shelter.service;
 
+import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import lv.bootcamp.shelter.model.Animal;
+import lv.bootcamp.shelter.service.data.JsonSummary;
 import lv.bootcamp.shelter.service.data.ShelterReportData;
 
 import java.io.BufferedWriter;
@@ -28,6 +30,10 @@ public class ReportExportService {
             writer.write("Total imported: " + reportData.importResult().allAnimals().size());
             writer.newLine();
             writer.write("Total skipped:  " + reportData.importResult().skippedRows());
+            writer.newLine();
+            writer.write("Invalid rows: " + reportData.importResult().invalidRows().stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(", ")));
             writer.newLine();
             writer.newLine();
 
@@ -64,6 +70,21 @@ public class ReportExportService {
             writer.newLine();
         } catch (IOException e) {
             log.error("Could not write report to {}", outputPath, e);
+        }
+    }
+
+    public void writeJsonSummary(Path jsonPath, ShelterReportData reportData) {
+        JsonSummary summary = new JsonSummary(
+                reportData.importResult().allAnimals().size(),
+                reportData.importResult().skippedRows(),
+                reportData.uniqueSpecies(),
+                reportData.totalPerSpecies(),
+                reportData.vaccinatedPerSpecies(),
+                reportData.animalsNeedingVetInput());
+        try {
+            Files.writeString(jsonPath, new Gson().toJson(summary), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            log.error("Could not write JSON summary to {}", jsonPath, e);
         }
     }
 }

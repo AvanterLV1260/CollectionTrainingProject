@@ -2,3 +2,6 @@ target/
 .idea/
 *.iml
 output/upload-report.txt
+output/summary.json
+output/upload-report-*.txt
+output/processed-files.txt
