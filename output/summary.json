@@ -1,0 +1,1 @@
+{"imported":31,"skipped":6,"species":["Bird","Cat","Dog","Rabbit"],"totalPerSpecies":{"Bird":6,"Cat":8,"Rabbit":6,"Dog":11},"vaccinatedPerSpecies":{"Bird":2,"Cat":7,"Rabbit":3,"Dog":10},"needsVetInput":["Milo(Dog)","Leo(Cat)","Pepper(Bird)"]}
