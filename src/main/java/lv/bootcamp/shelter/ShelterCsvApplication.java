@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+/**
+ * Runs the program: imports CSV files and writes the reports.
+ */
 @Slf4j
 public class ShelterCsvApplication {
 
@@ -38,14 +41,7 @@ public class ShelterCsvApplication {
         List<Integer> invalidRows = new ArrayList<>();
         int skippedRows = 0;
 
-        Set<String> processedFiles = new HashSet<>();
-        try {
-            if (Files.exists(registry)) {
-                processedFiles.addAll(Files.readAllLines(registry, StandardCharsets.UTF_8));
-            }
-        } catch (IOException e) {
-            log.error("Could not read registry {}", registry, e);
-        }
+        Set<String> processedFiles = readProcessedFiles(registry);
 
         try (Stream<Path> paths = Files.walk(dataDir)) {
             List<Path> csvFiles = paths.filter(path -> path.toString().endsWith(".csv")).toList();
@@ -59,8 +55,7 @@ public class ShelterCsvApplication {
                 allAnimals.addAll(result.allAnimals());
                 skippedRows += result.skippedRows();
                 invalidRows.addAll(result.invalidRows());
-                Files.writeString(registry, fileName + System.lineSeparator(), StandardCharsets.UTF_8,
-                        StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                markAsProcessed(registry, fileName);
             }
         } catch (IOException e) {
             log.error("Could not scan folder {}", dataDir, e);
@@ -70,5 +65,22 @@ public class ShelterCsvApplication {
         ShelterReportData reportData = analyticsService.buildReportData(importResult);
         reportExportService.writeReport(outputPath, reportData);
         reportExportService.writeJsonSummary(Path.of("output", "summary.json"), reportData);
+    }
+
+    private static Set<String> readProcessedFiles(Path registry) {
+        Set<String> processedFiles = new HashSet<>();
+        try {
+            if (Files.exists(registry)) {
+                processedFiles.addAll(Files.readAllLines(registry, StandardCharsets.UTF_8));
+            }
+        } catch (IOException e) {
+            log.error("Could not read registry {}", registry, e);
+        }
+        return processedFiles;
+    }
+
+    private static void markAsProcessed(Path registry, String fileName) throws IOException {
+        Files.writeString(registry, fileName + System.lineSeparator(), StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     }
 }

@@ -40,6 +40,13 @@ public class ShelterAnalyticsService {
                 .filter(Animal::isVaccinated)
                 .collect(Collectors.groupingBy(Animal::getSpecies, Collectors.counting()));
 
+        Map<String, Animal> oldestPerSpecies = findOldestPerSpecies(animalsBySpecies);
+
+        return new ShelterReportData(importResult, uniqueSpecies, totalPerSpecies,
+                vaccinatedPerSpecies, oldestPerSpecies, animalsNeedingVetInput);
+    }
+
+    private static Map<String, Animal> findOldestPerSpecies(Map<String, List<Animal>> animalsBySpecies) {
         Map<String, Animal> oldestPerSpecies = new TreeMap<>();
         for (String species : animalsBySpecies.keySet()) {
             animalsBySpecies.get(species).stream()
@@ -48,8 +55,6 @@ public class ShelterAnalyticsService {
                     .findFirst()
                     .ifPresent(oldest -> oldestPerSpecies.put(species, oldest));
         }
-
-        return new ShelterReportData(importResult, uniqueSpecies, totalPerSpecies,
-                vaccinatedPerSpecies, oldestPerSpecies, animalsNeedingVetInput);
+        return oldestPerSpecies;
     }
 }

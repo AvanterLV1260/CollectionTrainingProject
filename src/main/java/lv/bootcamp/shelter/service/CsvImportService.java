@@ -15,9 +15,16 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+/**
+ * Reads the intake CSV file and validates each row.
+ */
 @Slf4j
 public class CsvImportService {
 
+    /**
+     * Reads a CSV file and converts valid rows into animals.
+     * Invalid rows are skipped and their row numbers are saved.
+     */
     public ImportResult importAnimals(Path inputPath) {
         log.info("Starting import from {}", inputPath);
 
