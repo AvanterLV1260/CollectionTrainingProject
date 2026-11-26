@@ -41,7 +41,7 @@ public class ShelterCsvApplication {
         List<Integer> invalidRows = new ArrayList<>();
         int skippedRows = 0;
 
-        Set<String> processedFiles = readProcessedFiles(registry);
+        Set<String> processedFiles = readRegistry(registry);
 
         try (Stream<Path> paths = Files.walk(dataDir)) {
             List<Path> csvFiles = paths.filter(path -> path.toString().endsWith(".csv")).toList();
@@ -55,7 +55,7 @@ public class ShelterCsvApplication {
                 allAnimals.addAll(result.allAnimals());
                 skippedRows += result.skippedRows();
                 invalidRows.addAll(result.invalidRows());
-                markAsProcessed(registry, fileName);
+                saveToRegistry(registry, fileName);
             }
         } catch (IOException e) {
             log.error("Could not scan folder {}", dataDir, e);
@@ -67,7 +67,7 @@ public class ShelterCsvApplication {
         reportExportService.writeJsonSummary(Path.of("output", "summary.json"), reportData);
     }
 
-    private static Set<String> readProcessedFiles(Path registry) {
+    private static Set<String> readRegistry(Path registry) {
         Set<String> processedFiles = new HashSet<>();
         try {
             if (Files.exists(registry)) {
@@ -79,7 +79,7 @@ public class ShelterCsvApplication {
         return processedFiles;
     }
 
-    private static void markAsProcessed(Path registry, String fileName) throws IOException {
+    private static void saveToRegistry(Path registry, String fileName) throws IOException {
         Files.writeString(registry, fileName + System.lineSeparator(), StandardCharsets.UTF_8,
                 StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     }

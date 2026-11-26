@@ -26,18 +26,18 @@ public class ReportExportService {
      */
     public void writeReport(Path outputPath, ShelterReportData reportData) {
         try (BufferedWriter writer = Files.newBufferedWriter(outputPath, StandardCharsets.UTF_8)) {
-            writeHeader(writer);
-            writeTotals(reportData, writer);
+            writeTitle(writer);
+            writeRowCounts(reportData, writer);
             writeUniqueSpecies(reportData, writer);
-            writePerSpeciesBreakdown(reportData, writer);
-            writeOldestPerSpecies(reportData, writer);
-            writeVetInput(reportData, writer);
+            writeSpeciesCounts(reportData, writer);
+            writeOldestAnimals(reportData, writer);
+            writeUnknownAgeAnimals(reportData, writer);
         } catch (IOException e) {
             log.error("Could not write report to {}", outputPath, e);
         }
     }
 
-    private static void writeHeader(BufferedWriter writer) throws IOException {
+    private static void writeTitle(BufferedWriter writer) throws IOException {
         writer.write("Shelter Intake Report");
         writer.newLine();
         writer.write("Date generated: " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
@@ -53,7 +53,7 @@ public class ReportExportService {
         writer.newLine();
     }
 
-    private static void writeOldestPerSpecies(ShelterReportData reportData, BufferedWriter writer) throws IOException {
+    private static void writeOldestAnimals(ShelterReportData reportData, BufferedWriter writer) throws IOException {
         writer.write("Oldest per species");
         writer.newLine();
         for (String species : reportData.uniqueSpecies()) {
@@ -66,14 +66,14 @@ public class ReportExportService {
         writer.newLine();
     }
 
-    private static void writeVetInput(ShelterReportData reportData, BufferedWriter writer) throws IOException {
+    private static void writeUnknownAgeAnimals(ShelterReportData reportData, BufferedWriter writer) throws IOException {
         writer.write("Needs Vet input to determine age");
         writer.newLine();
         writer.write(reportData.animalsNeedingVetInput().stream().collect(Collectors.joining(", ")));
         writer.newLine();
     }
 
-    private static void writePerSpeciesBreakdown(ShelterReportData reportData, BufferedWriter writer) throws IOException {
+    private static void writeSpeciesCounts(ShelterReportData reportData, BufferedWriter writer) throws IOException {
         writer.write("Per species breakdown");
         writer.newLine();
         for (String species : reportData.uniqueSpecies()) {
@@ -85,7 +85,7 @@ public class ReportExportService {
         writer.newLine();
     }
 
-    private static void writeTotals(ShelterReportData reportData, BufferedWriter writer) throws IOException {
+    private static void writeRowCounts(ShelterReportData reportData, BufferedWriter writer) throws IOException {
         writer.write("Total imported: " + reportData.importResult().allAnimals().size());
         writer.newLine();
         writer.write("Total skipped:  " + reportData.importResult().skippedRows());
